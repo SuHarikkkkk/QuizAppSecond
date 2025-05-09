@@ -18,8 +18,15 @@ class LoginFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         binding = FragmentLoginBinding.inflate(inflater, container, false)
+
+        // Проверка, авторизован ли пользователь
+        val currentUser = firebaseAuth.currentUser
+        if (currentUser != null) {
+            // Если пользователь уже вошёл — переход к выбору квиза
+            findNavController().navigate(R.id.action_loginFragment_to_quizSelectionFragment)
+        }
 
         binding.btnLogin.setOnClickListener {
             val email = binding.etEmail.text.toString()
@@ -33,7 +40,6 @@ class LoginFragment : Fragment() {
             firebaseAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {
-                        // Переход на экран выбора квиза
                         findNavController().navigate(R.id.action_loginFragment_to_quizSelectionFragment)
                     } else {
                         Toast.makeText(activity, "Login failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
@@ -42,7 +48,6 @@ class LoginFragment : Fragment() {
         }
 
         binding.btnRegister.setOnClickListener {
-            // Переход к экрану регистрации
             findNavController().navigate(R.id.action_loginFragment_to_registerFragment)
         }
 

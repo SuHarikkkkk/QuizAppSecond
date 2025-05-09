@@ -16,7 +16,8 @@ class QuizSelectionFragment : Fragment() {
 
     private lateinit var binding: FragmentQuizSelectionBinding
     private val db = FirebaseFirestore.getInstance()
-    private var selectedQuizName: String? = null
+    private var selectedQuizId: String? = null
+    private val quizIdMap = mutableMapOf<String, String>() // name -> id
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -24,19 +25,20 @@ class QuizSelectionFragment : Fragment() {
     ): View {
         binding = FragmentQuizSelectionBinding.inflate(inflater, container, false)
 
-        // Загружаем квизы
         db.collection("quizzes").get()
             .addOnSuccessListener { result ->
-                val quizList = mutableListOf<String>()
+                val quizNames = mutableListOf<String>()
                 for (document in result) {
-                    val quizName = document.id
-                    quizList.add(quizName)
+                    val quizId = document.id
+                    val quizName = document.getString("name") ?: quizId
+                    quizNames.add(quizName)
+                    quizIdMap[quizName] = quizId
                 }
 
                 val adapter = ArrayAdapter(
                     requireContext(),
                     android.R.layout.simple_spinner_item,
-                    quizList
+                    quizNames
                 )
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                 binding.spinnerQuizzes.adapter = adapter
@@ -53,18 +55,19 @@ class QuizSelectionFragment : Fragment() {
             override fun onItemSelected(
                 parent: AdapterView<*>?, view: View?, position: Int, id: Long
             ) {
-                selectedQuizName = parent?.getItemAtPosition(position) as? String
+                val selectedName = parent?.getItemAtPosition(position) as? String
+                selectedQuizId = quizIdMap[selectedName]
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) {
-                selectedQuizName = null
+                selectedQuizId = null
             }
         }
 
         binding.btnStartQuiz.setOnClickListener {
-            selectedQuizName?.let { quizName ->
+            selectedQuizId?.let { quizId ->
                 val action = QuizSelectionFragmentDirections
-                    .actionQuizSelectionFragmentToFragmentQuiz(quizName)
+                    .actionQuizSelectionFragmentToFragmentQuiz(quizId)
                 findNavController().navigate(action)
             } ?: Toast.makeText(
                 requireContext(),
