@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/loginFragment">
+
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.example.quizappsecond.LoginFragment"
+        android:label="Login" >
+        <action
+            android:id="@+id/action_loginFragment_to_registerFragment"
+            app:destination="@id/registerFragment" />
+        <action
+            android:id="@+id/action_loginFragment_to_quizSelectionFragment"
+            app:destination="@id/quizSelectionFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/registerFragment"
+        android:name="com.example.quizappsecond.RegisterFragment"
+        android:label="Register" >
+        <action
+            android:id="@+id/action_registerFragment_to_loginFragment"
+            app:destination="@id/loginFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/quizSelectionFragment"
+        android:name="com.example.quizappsecond.QuizSelectionFragment"
+        android:label="Select Quiz" >
+        <action
+            android:id="@+id/action_quizSelectionFragment_to_fragmentQuiz"
+            app:destination="@id/fragmentQuiz" />
+        <action
+            android:id="@+id/action_quizSelectionFragment_to_resultFragment"
+            app:destination="@id/resultFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/fragmentQuiz"
+        android:name="com.example.quizappsecond.FragmentQuiz"
+        android:label="Quiz">
+
+        <!-- Аргумент quizName -->
+        <argument
+            android:name="quizName"
+            app:argType="string" />
+
+        <action
+            android:id="@+id/actionFragmentQuizToResultFragment"
+            app:destination="@id/resultFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/resultFragment"
+        android:name="com.example.quizappsecond.ResultFragment"
+        android:label="Results">
+        <argument
+            android:name="correct"
+            app:argType="integer" />
+        <argument
+            android:name="total"
+            app:argType="integer" />
+    </fragment>
+
+</navigation>
