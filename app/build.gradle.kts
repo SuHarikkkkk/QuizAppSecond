@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     id("androidx.navigation.safeargs.kotlin")
     alias(libs.plugins.google.gms.google.services)
+    id("org.jetbrains.kotlin.kapt")
 }
 
 android {
@@ -43,6 +44,8 @@ android {
 }
 
 dependencies {
+    kapt("com.github.bumptech.glide:compiler:4.16.0")
+    implementation ("com.github.bumptech.glide:glide:4.16.0")
     implementation ("com.google.firebase:firebase-auth:21.0.1")
     implementation ("com.google.firebase:firebase-firestore:24.0.1")
     implementation ("androidx.navigation:navigation-fragment-ktx:2.5.0")

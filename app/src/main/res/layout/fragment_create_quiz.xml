@@ -1,0 +1,76 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <EditText
+            android:id="@+id/etQuizTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Название квиза" />
+
+        <EditText
+            android:id="@+id/etQuestionText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Вопрос" />
+
+        <EditText
+            android:id="@+id/etOption1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Вариант 1" />
+
+        <EditText
+            android:id="@+id/etOption2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Вариант 2" />
+
+        <EditText
+            android:id="@+id/etOption3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Вариант 3" />
+
+        <EditText
+            android:id="@+id/etOption4"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Вариант 4" />
+
+        <EditText
+            android:id="@+id/etCorrectIndex"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Правильный вариант (0-3)"
+            android:inputType="number" />
+
+        <EditText
+            android:id="@+id/etImageUrl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="URL изображения (опционально)" />
+
+        <Button
+            android:id="@+id/btnAddQuestion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Добавить вопрос"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="12dp" />
+
+        <Button
+            android:id="@+id/btnSaveQuiz"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Сохранить квиз"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="16dp" />
+    </LinearLayout>
+</ScrollView>

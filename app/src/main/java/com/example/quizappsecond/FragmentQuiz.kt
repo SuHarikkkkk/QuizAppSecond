@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import com.bumptech.glide.Glide
 import com.example.quizappsecond.databinding.FragmentQuizBinding
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -54,7 +55,7 @@ class FragmentQuiz : Fragment() {
             .get()
             .addOnSuccessListener { document ->
                 val questionsData = document["questions"] as? List<Map<String, Any>>
-                if (questionsData == null || questionsData.isEmpty()) {
+                if (questionsData.isNullOrEmpty()) {
                     Toast.makeText(context, "No questions found", Toast.LENGTH_SHORT).show()
                     return@addOnSuccessListener
                 }
@@ -64,9 +65,10 @@ class FragmentQuiz : Fragment() {
                     val text = q["question"] as? String ?: continue
                     val options = q["options"] as? List<String> ?: continue
                     val correctIndex = (q["correctIndex"] as? String)?.toIntOrNull() ?: continue
-
                     val correctAnswer = options.getOrNull(correctIndex) ?: continue
-                    questions.add(Question(text, options, correctAnswer))
+                    val imageUrl = q["imageUrl"] as? String
+
+                    questions.add(Question(text, options, correctAnswer, imageUrl))
                 }
 
                 if (questions.isNotEmpty()) {
@@ -82,7 +84,6 @@ class FragmentQuiz : Fragment() {
             }
     }
 
-
     private fun showQuestion() {
         val question = questions[currentQuestionIndex]
         binding.tvQuestion.text = question.text
@@ -93,8 +94,17 @@ class FragmentQuiz : Fragment() {
         binding.rbOption2.text = options.getOrNull(1) ?: ""
         binding.rbOption3.text = options.getOrNull(2) ?: ""
         binding.rbOption4.text = options.getOrNull(3) ?: ""
-    }
 
+        // Загрузить изображение, если есть
+        if (!question.imageUrl.isNullOrEmpty()) {
+            binding.ivQuestionImage.visibility = View.VISIBLE
+            Glide.with(this)
+                .load(question.imageUrl)
+                .into(binding.ivQuestionImage)
+        } else {
+            binding.ivQuestionImage.visibility = View.GONE
+        }
+    }
 
     private fun getSelectedAnswer(): String {
         return when (binding.rgOptions.checkedRadioButtonId) {
@@ -106,5 +116,3 @@ class FragmentQuiz : Fragment() {
         }
     }
 }
-
-data class Question(val text: String, val options: List<String>, val correctAnswer: String)
