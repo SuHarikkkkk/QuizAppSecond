@@ -36,18 +36,30 @@
         <action
             android:id="@+id/action_quizSelectionFragment_to_fragmentCreateQuiz"
             app:destination="@id/fragmentCreateQuiz" />
+        <action
+            android:id="@+id/action_quizSelectionFragment_to_userQuizzesFragment"
+            app:destination="@id/userQuizzesFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/userQuizzesFragment"
+        android:name="com.example.quizappsecond.UserQuizzesFragment">
+        <action
+            android:id="@+id/action_userQuizzesFragment_to_fragmentQuiz"
+            app:destination="@id/fragmentQuiz" />
     </fragment>
 
     <fragment
         android:id="@+id/fragmentQuiz"
         android:name="com.example.quizappsecond.FragmentQuiz">
-
         <argument
-            android:name="quizName"
+            android:name="quizId"
             app:argType="string" />
-
+        <argument
+            android:name="collection"
+            app:argType="string" />
         <action
-            android:id="@+id/actionFragmentQuizToResultFragment"
+            android:id="@+id/action_fragmentQuiz_to_resultFragment"
             app:destination="@id/resultFragment" />
     </fragment>
 
@@ -61,13 +73,15 @@
             android:name="total"
             app:argType="integer" />
     </fragment>
+
     <fragment
         android:id="@+id/fragmentCreateQuiz"
         android:name="com.example.quizappsecond.FragmentCreateQuiz" />
+
     <fragment
         android:id="@+id/loginIntroFragment"
         android:name="com.example.quizappsecond.fragments.LoginIntroFragment"
-        tools:layout="@layout/fragment_login_intro" >
+        tools:layout="@layout/fragment_login_intro">
         <action
             android:id="@+id/action_loginIntroFragment_to_loginFragment"
             app:destination="@id/loginFragment" />

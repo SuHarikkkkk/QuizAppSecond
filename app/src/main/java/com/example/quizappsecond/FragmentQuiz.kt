@@ -19,10 +19,13 @@ class FragmentQuiz : Fragment() {
     private var currentQuestionIndex = 0
     private var correctAnswers = 0
     private lateinit var selectedQuiz: String
+    private lateinit var collectionName: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        selectedQuiz = FragmentQuizArgs.fromBundle(requireArguments()).quizName
+        val args = FragmentQuizArgs.fromBundle(requireArguments())
+        selectedQuiz = args.quizId
+        collectionName = args.collection
     }
 
     override fun onCreateView(
@@ -60,8 +63,8 @@ class FragmentQuiz : Fragment() {
     }
 
     private fun loadQuestionsFromFirestore(quizName: String) {
-        db.collection("quizzes")
-            .document(quizName)
+        db.collection(collectionName)
+            .document(selectedQuiz)
             .get()
             .addOnSuccessListener { document ->
                 val questionsData = document["questions"] as? List<Map<String, Any>>

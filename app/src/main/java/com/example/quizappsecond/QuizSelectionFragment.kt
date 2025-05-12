@@ -10,16 +10,15 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.example.quizappsecond.databinding.FragmentQuizSelectionBinding
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class QuizSelectionFragment : Fragment() {
 
     private lateinit var binding: FragmentQuizSelectionBinding
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
-    private var selectedStandardQuiz: String? = null
-    private var selectedUserQuiz: String? = null
+    private var selectedStandardQuizId: String? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -27,18 +26,19 @@ class QuizSelectionFragment : Fragment() {
     ): View {
         binding = FragmentQuizSelectionBinding.inflate(inflater, container, false)
 
-        loadQuizzes("quizzes", binding.spinnerQuizzes) { selectedStandardQuiz = it }
-        loadQuizzes("user_quizzes", binding.spinnerUserQuizzes) { selectedUserQuiz = it }
+        // Загрузка квизов из коллекции "quizzes"
+        loadQuizzes("quizzes", binding.spinnerQuizzes) { selectedStandardQuizId = it }
 
         binding.btnStartQuiz.setOnClickListener {
-            val quizToStart = selectedStandardQuiz ?: selectedUserQuiz
-            if (quizToStart != null) {
+            selectedStandardQuizId?.let { quizId ->
                 val action = QuizSelectionFragmentDirections
-                    .actionQuizSelectionFragmentToFragmentQuiz(quizToStart)
+                    .actionQuizSelectionFragmentToFragmentQuiz(quizId, "quizzes")
                 findNavController().navigate(action)
-            } else {
-                Toast.makeText(requireContext(), "Выберите квиз", Toast.LENGTH_SHORT).show()
-            }
+            } ?: Toast.makeText(requireContext(), "Выберите квиз", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.btnYourQuizzes.setOnClickListener {
+            findNavController().navigate(R.id.userQuizzesFragment)
         }
 
         binding.btnLogout.setOnClickListener {
@@ -48,21 +48,6 @@ class QuizSelectionFragment : Fragment() {
         binding.btnCreateQuiz.setOnClickListener {
             findNavController().navigate(R.id.action_quizSelectionFragment_to_fragmentCreateQuiz)
         }
-
-        binding.btnShareQuiz.setOnClickListener {
-            selectedUserQuiz?.let { quizId ->
-                val shareText = "Попробуй пройти мой квиз в приложении: \"$quizId\" 🎓\n" +
-                        "Открой приложение и выбери его в разделе 'Пользовательские квизы'."
-
-                val shareIntent = android.content.Intent().apply {
-                    action = android.content.Intent.ACTION_SEND
-                    putExtra(android.content.Intent.EXTRA_TEXT, shareText)
-                    type = "text/plain"
-                }
-                startActivity(android.content.Intent.createChooser(shareIntent, "Поделиться квизом через:"))
-            } ?: Toast.makeText(requireContext(), "Выберите пользовательский квиз для отправки", Toast.LENGTH_SHORT).show()
-        }
-
 
         return binding.root
     }
@@ -86,7 +71,7 @@ class QuizSelectionFragment : Fragment() {
                 val quizNames = mutableListOf<String>()
 
                 for (document in result) {
-                    val name = document.getString("name") ?: document.id // fallback
+                    val name = document.getString("name") ?: document.id
                     nameToIdMap[name] = document.id
                     quizNames.add(name)
                 }
