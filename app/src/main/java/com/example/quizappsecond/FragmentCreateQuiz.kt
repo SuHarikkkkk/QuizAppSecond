@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.quizappsecond.databinding.FragmentCreateQuizBinding
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 class FragmentCreateQuiz : Fragment() {
@@ -14,6 +15,7 @@ class FragmentCreateQuiz : Fragment() {
     private lateinit var binding: FragmentCreateQuizBinding
     private val questions = mutableListOf<Question>()
     private val db = FirebaseFirestore.getInstance()
+    private val auth = FirebaseAuth.getInstance()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -68,6 +70,12 @@ class FragmentCreateQuiz : Fragment() {
             return
         }
 
+        val currentUser = auth.currentUser
+        if (currentUser == null) {
+            Toast.makeText(requireContext(), "Ошибка: пользователь не авторизован", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         val questionsData = questions.map {
             mapOf(
                 "question" to it.text,
@@ -77,8 +85,14 @@ class FragmentCreateQuiz : Fragment() {
             )
         }
 
-        db.collection("quizzes").document(quizTitle)
-            .set(mapOf("questions" to questionsData))
+        val quizData = mapOf(
+            "name" to quizTitle,
+            "ownerUid" to currentUser.uid,
+            "questions" to questionsData
+        )
+
+        db.collection("user_quizzes").document(quizTitle)
+            .set(quizData)
             .addOnSuccessListener {
                 Toast.makeText(requireContext(), "Квиз \"$quizTitle\" сохранён!", Toast.LENGTH_LONG).show()
                 clearAll()

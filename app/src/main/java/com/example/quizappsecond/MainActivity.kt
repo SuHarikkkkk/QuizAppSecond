@@ -26,10 +26,6 @@ class MainActivity : AppCompatActivity() {
         // Привязываем NavController к ActionBar для поддержки навигации
         NavigationUI.setupActionBarWithNavController(this, navController)
 
-        // Если пользователь уже залогинен, перенаправляем на экран выбора квиза
-//        if (firebaseAuth.currentUser != null) {
-//            navController.navigate(R.id.quizSelectionFragment)
-//        }
     }
 
     // Обработка кнопки "Назад"

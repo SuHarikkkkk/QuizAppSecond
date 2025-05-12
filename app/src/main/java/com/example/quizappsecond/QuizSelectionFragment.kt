@@ -11,13 +11,15 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.example.quizappsecond.databinding.FragmentQuizSelectionBinding
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.auth.FirebaseAuth
 
 class QuizSelectionFragment : Fragment() {
 
     private lateinit var binding: FragmentQuizSelectionBinding
     private val db = FirebaseFirestore.getInstance()
-    private var selectedQuizId: String? = null
-    private val quizIdMap = mutableMapOf<String, String>() // name -> id
+    private val auth = FirebaseAuth.getInstance()
+    private var selectedStandardQuiz: String? = null
+    private var selectedUserQuiz: String? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -25,14 +27,68 @@ class QuizSelectionFragment : Fragment() {
     ): View {
         binding = FragmentQuizSelectionBinding.inflate(inflater, container, false)
 
-        db.collection("quizzes").get()
+        loadQuizzes("quizzes", binding.spinnerQuizzes) { selectedStandardQuiz = it }
+        loadQuizzes("user_quizzes", binding.spinnerUserQuizzes) { selectedUserQuiz = it }
+
+        binding.btnStartQuiz.setOnClickListener {
+            val quizToStart = selectedStandardQuiz ?: selectedUserQuiz
+            if (quizToStart != null) {
+                val action = QuizSelectionFragmentDirections
+                    .actionQuizSelectionFragmentToFragmentQuiz(quizToStart)
+                findNavController().navigate(action)
+            } else {
+                Toast.makeText(requireContext(), "Выберите квиз", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        binding.btnLogout.setOnClickListener {
+            (activity as MainActivity).logout()
+        }
+
+        binding.btnCreateQuiz.setOnClickListener {
+            findNavController().navigate(R.id.action_quizSelectionFragment_to_fragmentCreateQuiz)
+        }
+
+        binding.btnShareQuiz.setOnClickListener {
+            selectedUserQuiz?.let { quizId ->
+                val shareText = "Попробуй пройти мой квиз в приложении: \"$quizId\" 🎓\n" +
+                        "Открой приложение и выбери его в разделе 'Пользовательские квизы'."
+
+                val shareIntent = android.content.Intent().apply {
+                    action = android.content.Intent.ACTION_SEND
+                    putExtra(android.content.Intent.EXTRA_TEXT, shareText)
+                    type = "text/plain"
+                }
+                startActivity(android.content.Intent.createChooser(shareIntent, "Поделиться квизом через:"))
+            } ?: Toast.makeText(requireContext(), "Выберите пользовательский квиз для отправки", Toast.LENGTH_SHORT).show()
+        }
+
+
+        return binding.root
+    }
+
+    private fun loadQuizzes(
+        collection: String,
+        spinner: android.widget.Spinner,
+        onSelected: (String?) -> Unit
+    ) {
+        val uid = auth.currentUser?.uid
+
+        val query = if (collection == "user_quizzes" && uid != null) {
+            db.collection(collection).whereEqualTo("ownerUid", uid)
+        } else {
+            db.collection(collection)
+        }
+
+        query.get()
             .addOnSuccessListener { result ->
+                val nameToIdMap = mutableMapOf<String, String>()
                 val quizNames = mutableListOf<String>()
+
                 for (document in result) {
-                    val quizId = document.id
-                    val quizName = document.getString("name") ?: quizId
-                    quizNames.add(quizName)
-                    quizIdMap[quizName] = quizId
+                    val name = document.getString("name") ?: document.id // fallback
+                    nameToIdMap[name] = document.id
+                    quizNames.add(name)
                 }
 
                 val adapter = ArrayAdapter(
@@ -41,45 +97,24 @@ class QuizSelectionFragment : Fragment() {
                     quizNames
                 )
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                binding.spinnerQuizzes.adapter = adapter
+                spinner.adapter = adapter
+
+                spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                    override fun onItemSelected(
+                        parent: AdapterView<*>?, view: View?, position: Int, id: Long
+                    ) {
+                        val selectedName = parent?.getItemAtPosition(position) as? String
+                        val selectedId = nameToIdMap[selectedName]
+                        onSelected(selectedId)
+                    }
+
+                    override fun onNothingSelected(parent: AdapterView<*>?) {
+                        onSelected(null)
+                    }
+                }
             }
-            .addOnFailureListener { exception ->
-                Toast.makeText(
-                    activity,
-                    "Failed to load quizzes: ${exception.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
+            .addOnFailureListener { e ->
+                Toast.makeText(context, "Ошибка загрузки квизов: ${e.message}", Toast.LENGTH_SHORT).show()
             }
-
-        binding.spinnerQuizzes.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>?, view: View?, position: Int, id: Long
-            ) {
-                val selectedName = parent?.getItemAtPosition(position) as? String
-                selectedQuizId = quizIdMap[selectedName]
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-                selectedQuizId = null
-            }
-        }
-
-        binding.btnStartQuiz.setOnClickListener {
-            selectedQuizId?.let { quizId ->
-                val action = QuizSelectionFragmentDirections
-                    .actionQuizSelectionFragmentToFragmentQuiz(quizId)
-                findNavController().navigate(action)
-            } ?: Toast.makeText(
-                requireContext(),
-                "Please select a quiz",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-
-        binding.btnLogout.setOnClickListener {
-            (activity as MainActivity).logout()
-        }
-
-        return binding.root
     }
 }

@@ -18,7 +18,7 @@ class ResultFragment : Fragment() {
         binding = FragmentResultBinding.inflate(inflater, container, false)
 
         val args = ResultFragmentArgs.fromBundle(requireArguments())
-        binding.tvResult.text = "You got ${args.correct} out of ${args.total} correct!"
+        binding.tvResult.text = "Вы набрали ${args.correct} из ${args.total}!"
 
         return binding.root
     }

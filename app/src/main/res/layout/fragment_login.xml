@@ -26,25 +26,25 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="16dp"/>
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnLogin"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="Войти"
-        style="@style/Widget.AppCompat.Button.Borderless"
-        android:background="@color/my_button_color"
+        android:backgroundTint="@color/my_button_color"
+        android:textColor="@android:color/white"
         app:layout_constraintTop_toBottomOf="@id/etPassword"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="32dp"/>
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnRegister"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="Зарегистрироваться"
-        style="@style/Widget.AppCompat.Button.Borderless"
-        android:background="@color/my_button_color"
+        android:backgroundTint="@color/my_button_color"
+        android:textColor="@android:color/white"
         app:layout_constraintTop_toBottomOf="@id/btnLogin"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

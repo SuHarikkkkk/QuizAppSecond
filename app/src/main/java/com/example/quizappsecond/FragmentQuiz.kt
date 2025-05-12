@@ -44,6 +44,16 @@ class FragmentQuiz : Fragment() {
             }
         }
 
+        binding.btnPrevious.setOnClickListener {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--
+                showQuestion()
+            } else {
+                Toast.makeText(requireContext(), "Это первый вопрос", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+
         loadQuestionsFromFirestore(selectedQuiz)
 
         return binding.root
