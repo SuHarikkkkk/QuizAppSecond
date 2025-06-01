@@ -6,20 +6,21 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import com.bumptech.glide.Glide
 import com.example.quizappsecond.databinding.FragmentQuizBinding
-import com.google.firebase.firestore.FirebaseFirestore
+import com.example.quizappsecond.viewmodel.QuizViewModel
 
 class FragmentQuiz : Fragment() {
 
     private lateinit var binding: FragmentQuizBinding
-    private val db = FirebaseFirestore.getInstance()
+    private val quizViewModel: QuizViewModel by viewModels()
 
-    private var questions = mutableListOf<Question>()
     private var currentQuestionIndex = 0
     private var correctAnswers = 0
-    private lateinit var selectedQuiz: String
-    private lateinit var collectionName: String
+    private var selectedQuiz = ""
+    private var collectionName = ""
+    private var questions: List<Question> = listOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +35,15 @@ class FragmentQuiz : Fragment() {
     ): View {
         binding = FragmentQuizBinding.inflate(inflater, container, false)
 
+        setupListeners()
+        observeViewModel()
+
+        quizViewModel.loadQuestions(collectionName, selectedQuiz)
+
+        return binding.root
+    }
+
+    private fun setupListeners() {
         binding.btnNext.setOnClickListener {
             val selectedAnswer = getSelectedAnswer()
             if (selectedAnswer == questions[currentQuestionIndex].correctAnswer) {
@@ -55,49 +65,26 @@ class FragmentQuiz : Fragment() {
                 Toast.makeText(requireContext(), "Это первый вопрос", Toast.LENGTH_SHORT).show()
             }
         }
-
-
-        loadQuestionsFromFirestore(selectedQuiz)
-
-        return binding.root
     }
 
-    private fun loadQuestionsFromFirestore(quizName: String) {
-        db.collection(collectionName)
-            .document(selectedQuiz)
-            .get()
-            .addOnSuccessListener { document ->
-                val questionsData = document["questions"] as? List<Map<String, Any>>
-                if (questionsData.isNullOrEmpty()) {
-                    Toast.makeText(context, "No questions found", Toast.LENGTH_SHORT).show()
-                    return@addOnSuccessListener
-                }
+    private fun observeViewModel() {
+        quizViewModel.questions.observe(viewLifecycleOwner) { loadedQuestions ->
+            questions = loadedQuestions
+            currentQuestionIndex = 0
+            correctAnswers = 0
+            showQuestion()
+        }
 
-                questions.clear()
-                for (q in questionsData) {
-                    val text = q["question"] as? String ?: continue
-                    val options = q["options"] as? List<String> ?: continue
-                    val correctIndex = (q["correctIndex"] as? String)?.toIntOrNull() ?: continue
-                    val correctAnswer = options.getOrNull(correctIndex) ?: continue
-                    val imageUrl = q["imageUrl"] as? String
-
-                    questions.add(Question(text, options, correctAnswer, imageUrl))
-                }
-
-                if (questions.isNotEmpty()) {
-                    currentQuestionIndex = 0
-                    correctAnswers = 0
-                    showQuestion()
-                } else {
-                    Toast.makeText(context, "No valid questions", Toast.LENGTH_SHORT).show()
-                }
+        quizViewModel.loadingError.observe(viewLifecycleOwner) { error ->
+            error?.let {
+                Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show()
             }
-            .addOnFailureListener {
-                Toast.makeText(context, "Error loading questions: ${it.message}", Toast.LENGTH_SHORT).show()
-            }
+        }
     }
 
     private fun showQuestion() {
+        if (questions.isEmpty() || currentQuestionIndex >= questions.size) return
+
         val question = questions[currentQuestionIndex]
         binding.tvQuestion.text = question.text
         binding.rgOptions.clearCheck()
@@ -108,12 +95,9 @@ class FragmentQuiz : Fragment() {
         binding.rbOption3.text = options.getOrNull(2) ?: ""
         binding.rbOption4.text = options.getOrNull(3) ?: ""
 
-        // Загрузить изображение, если есть
         if (!question.imageUrl.isNullOrEmpty()) {
             binding.ivQuestionImage.visibility = View.VISIBLE
-            Glide.with(this)
-                .load(question.imageUrl)
-                .into(binding.ivQuestionImage)
+            Glide.with(this).load(question.imageUrl).into(binding.ivQuestionImage)
         } else {
             binding.ivQuestionImage.visibility = View.GONE
         }

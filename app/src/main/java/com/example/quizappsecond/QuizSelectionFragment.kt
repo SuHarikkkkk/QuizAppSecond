@@ -26,7 +26,6 @@ class QuizSelectionFragment : Fragment() {
     ): View {
         binding = FragmentQuizSelectionBinding.inflate(inflater, container, false)
 
-        // Загрузка квизов из коллекции "quizzes"
         loadQuizzes("quizzes", binding.spinnerQuizzes) { selectedStandardQuizId = it }
 
         binding.btnStartQuiz.setOnClickListener {

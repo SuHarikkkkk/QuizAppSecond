@@ -2,32 +2,64 @@ package com.example.quizappsecond
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.quizappsecond.databinding.FragmentUserQuizzesBinding
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import com.example.quizappsecond.viewmodel.QuizViewModel
 
 class UserQuizzesFragment : Fragment() {
 
     private lateinit var binding: FragmentUserQuizzesBinding
-    private val db = FirebaseFirestore.getInstance()
-    private val auth = FirebaseAuth.getInstance()
+    private val quizViewModel: QuizViewModel by viewModels()
     private var selectedUserQuiz: String? = null
+    private var nameToIdMap: Map<String, String> = emptyMap()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         binding = FragmentUserQuizzesBinding.inflate(inflater, container, false)
+        return binding.root
+    }
 
-        loadUserQuizzes()
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        quizViewModel.loadUserQuizzes()
+
+        quizViewModel.userQuizzes.observe(viewLifecycleOwner) { quizzes ->
+            nameToIdMap = quizzes
+            val quizNames = quizzes.keys.toList()
+
+            val adapter = ArrayAdapter(
+                requireContext(),
+                android.R.layout.simple_spinner_item,
+                quizNames
+            ).apply {
+                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            }
+            binding.spinnerUserQuizzes.adapter = adapter
+        }
+
+        binding.spinnerUserQuizzes.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: AdapterView<*>?, view: View?, position: Int, id: Long
+            ) {
+                val name = parent?.getItemAtPosition(position) as? String
+                selectedUserQuiz = nameToIdMap[name]
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+                selectedUserQuiz = null
+            }
+        }
 
         binding.btnStartUserQuiz.setOnClickListener {
             selectedUserQuiz?.let {
@@ -48,47 +80,5 @@ class UserQuizzesFragment : Fragment() {
                 startActivity(Intent.createChooser(intent, "Поделиться квизом"))
             } ?: Toast.makeText(requireContext(), "Сначала выберите квиз", Toast.LENGTH_SHORT).show()
         }
-
-        return binding.root
-    }
-
-    private fun loadUserQuizzes() {
-        val uid = auth.currentUser?.uid ?: return
-        db.collection("user_quizzes").whereEqualTo("ownerUid", uid).get()
-            .addOnSuccessListener { result ->
-                val quizNames = mutableListOf<String>()
-                val nameToIdMap = mutableMapOf<String, String>()
-
-                for (doc in result) {
-                    val name = doc.getString("name") ?: doc.id
-                    nameToIdMap[name] = doc.id
-                    quizNames.add(name)
-                }
-
-                val adapter = ArrayAdapter(
-                    requireContext(),
-                    android.R.layout.simple_spinner_item,
-                    quizNames
-                )
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                binding.spinnerUserQuizzes.adapter = adapter
-
-                binding.spinnerUserQuizzes.onItemSelectedListener =
-                    object : AdapterView.OnItemSelectedListener {
-                        override fun onItemSelected(
-                            parent: AdapterView<*>?, view: View?, position: Int, id: Long
-                        ) {
-                            val selectedName = parent?.getItemAtPosition(position) as? String
-                            selectedUserQuiz = nameToIdMap[selectedName]
-                        }
-
-                        override fun onNothingSelected(parent: AdapterView<*>?) {
-                            selectedUserQuiz = null
-                        }
-                    }
-            }
-            .addOnFailureListener {
-                Toast.makeText(requireContext(), "Ошибка загрузки: ${it.message}", Toast.LENGTH_SHORT).show()
-            }
     }
 }

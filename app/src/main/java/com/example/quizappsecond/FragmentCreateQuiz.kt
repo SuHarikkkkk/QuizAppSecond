@@ -6,103 +6,67 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import com.example.quizappsecond.databinding.FragmentCreateQuizBinding
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import com.example.quizappsecond.viewmodel.CreateQuizViewModel
 
 class FragmentCreateQuiz : Fragment() {
 
     private lateinit var binding: FragmentCreateQuizBinding
-    private val questions = mutableListOf<Question>()
-    private val db = FirebaseFirestore.getInstance()
-    private val auth = FirebaseAuth.getInstance()
+    private val viewModel: CreateQuizViewModel by viewModels()
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentCreateQuizBinding.inflate(inflater, container, false)
 
         binding.btnAddQuestion.setOnClickListener {
-            addQuestion()
+            val question = getQuestionFromInputs()
+            if (question != null) {
+                viewModel.addQuestion(question)
+                Toast.makeText(context, "Вопрос добавлен", Toast.LENGTH_SHORT).show()
+                clearInputs()
+            }
         }
 
         binding.btnSaveQuiz.setOnClickListener {
-            saveQuizToFirestore()
+            viewModel.saveQuiz(binding.etQuizTitle.text.toString().trim())
+        }
+
+        viewModel.quizSaved.observe(viewLifecycleOwner) {
+            if (it) {
+                Toast.makeText(context, "Квиз сохранён", Toast.LENGTH_SHORT).show()
+                clearInputs()
+                binding.etQuizTitle.text?.clear()
+                viewModel.clearQuestions()
+            }
+        }
+
+        viewModel.errorMessage.observe(viewLifecycleOwner) {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
         }
 
         return binding.root
     }
 
-    private fun addQuestion() {
-        val questionText = binding.etQuestionText.text.toString().trim()
+    private fun getQuestionFromInputs(): Question? {
+        val text = binding.etQuestionText.text.toString().trim()
         val options = listOf(
-            binding.etOption1.text.toString().trim(),
-            binding.etOption2.text.toString().trim(),
-            binding.etOption3.text.toString().trim(),
-            binding.etOption4.text.toString().trim()
+            binding.etOption1.text.toString(),
+            binding.etOption2.text.toString(),
+            binding.etOption3.text.toString(),
+            binding.etOption4.text.toString()
         )
         val correctIndex = binding.etCorrectIndex.text.toString().toIntOrNull()
         val imageUrl = binding.etImageUrl.text.toString().trim()
 
-        if (questionText.isBlank() || options.any { it.isBlank() } || correctIndex !in 0..3) {
-            Toast.makeText(requireContext(), "Заполните вопрос и 4 варианта. Правильный индекс 0–3", Toast.LENGTH_SHORT).show()
-            return
+        if (text.isBlank() || options.any { it.isBlank() } || correctIndex !in 0..3) {
+            Toast.makeText(context, "Заполните все поля правильно", Toast.LENGTH_SHORT).show()
+            return null
         }
 
-        val question = Question(
-            text = questionText,
-            options = options,
-            correctAnswer = options[correctIndex!!],
-            imageUrl = if (imageUrl.isNotBlank()) imageUrl else null
-        )
-
-        questions.add(question)
-        Toast.makeText(requireContext(), "Вопрос добавлен (${questions.size})", Toast.LENGTH_SHORT).show()
-        clearQuestionFields()
+        return Question(text, options, options[correctIndex!!], imageUrl.takeIf { it.isNotBlank() })
     }
 
-    private fun saveQuizToFirestore() {
-        val quizTitle = binding.etQuizTitle.text.toString().trim()
-
-        if (quizTitle.isEmpty() || questions.isEmpty()) {
-            Toast.makeText(requireContext(), "Введите название квиза и хотя бы один вопрос", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val currentUser = auth.currentUser
-        if (currentUser == null) {
-            Toast.makeText(requireContext(), "Ошибка: пользователь не авторизован", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val questionsData = questions.map {
-            mapOf(
-                "question" to it.text,
-                "options" to it.options,
-                "correctIndex" to it.options.indexOf(it.correctAnswer).toString(),
-                "imageUrl" to it.imageUrl
-            )
-        }
-
-        val quizData = mapOf(
-            "name" to quizTitle,
-            "ownerUid" to currentUser.uid,
-            "questions" to questionsData
-        )
-
-        db.collection("user_quizzes").document(quizTitle)
-            .set(quizData)
-            .addOnSuccessListener {
-                Toast.makeText(requireContext(), "Квиз \"$quizTitle\" сохранён!", Toast.LENGTH_LONG).show()
-                clearAll()
-            }
-            .addOnFailureListener {
-                Toast.makeText(requireContext(), "Ошибка сохранения: ${it.message}", Toast.LENGTH_SHORT).show()
-            }
-    }
-
-    private fun clearQuestionFields() {
+    private fun clearInputs() {
         binding.etQuestionText.text?.clear()
         binding.etOption1.text?.clear()
         binding.etOption2.text?.clear()
@@ -111,10 +75,5 @@ class FragmentCreateQuiz : Fragment() {
         binding.etCorrectIndex.text?.clear()
         binding.etImageUrl.text?.clear()
     }
-
-    private fun clearAll() {
-        clearQuestionFields()
-        binding.etQuizTitle.text?.clear()
-        questions.clear()
-    }
 }
+

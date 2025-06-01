@@ -19,16 +19,13 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Получаем NavHostFragment и настраиваем NavController
         val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navHostFragment.navController
 
-        // Привязываем NavController к ActionBar для поддержки навигации
         NavigationUI.setupActionBarWithNavController(this, navController)
 
     }
 
-    // Обработка кнопки "Назад"
     override fun onSupportNavigateUp(): Boolean {
         return navController.navigateUp() || super.onSupportNavigateUp()
     }
@@ -38,7 +35,6 @@ class MainActivity : AppCompatActivity() {
         navController.navigate(action)
     }
 
-    // Функция для выхода из аккаунта
     fun logout() {
         firebaseAuth.signOut()
         navController.navigate(R.id.loginFragment)
